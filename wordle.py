@@ -4,6 +4,7 @@ import re
 import datetime
 import os
 import sys
+import clipboard
 import requests
 
 #############################################################
@@ -43,7 +44,7 @@ for i in range(len(allowed_words)):
     allowed_words[i] = re.sub(quotes, '', word)
 
 # getting today's word
-dateobj = datetime.date(2021, 6, 19)
+dateobj = datetime.date(2021, 6, 19) #first wordle
 delta = datetime.date.today()-dateobj
 wordle_no = delta.days
 todays_word = words[wordle_no]
@@ -76,16 +77,29 @@ def cprint(text, col):
 ##############################################################
 #                 Wordle
 ##############################################################
-def get_coloured(word):
+def get_coloured(word, emoji):
+    GREEN_EMOJI = '🟩'
+    YELLOW_EMOJI = '🟨'
+    BLACK_EMOJI = '⬛'
+    buff = '  ' #2 spaces so it is visible aligned
+
     # return word with letters coloured according to today's word
-    buff = '  '
     for i in range(5):
         if word[i] == todays_word[i]:
-            buff += Colour.REVERSE + Colour.GREEN + word[i].upper() + ' ' + Colour.RESET
+            if emoji:
+                buff += GREEN_EMOJI
+            else:
+                buff += Colour.REVERSE + Colour.GREEN + word[i].upper() + ' ' + Colour.RESET
         elif word[i] in todays_word:
-            buff += Colour.REVERSE + Colour.YELLOW + word[i].upper()  + ' '+ Colour.RESET
+            if emoji:
+                buff += YELLOW_EMOJI
+            else:
+                buff += Colour.REVERSE + Colour.YELLOW + word[i].upper()  + ' '+ Colour.RESET
         else:
-            buff += word[i].upper() + ' '
+            if emoji:
+                buff += BLACK_EMOJI
+            else:
+                buff += word[i].upper() + ' '
 
     return buff
 
@@ -107,7 +121,7 @@ while True:
     print(Colour.BOLD + f'  Wordle {wordle_no}' + Colour.RESET + '\n\n')
 
     for i in range(len(attempts)):
-        print(get_coloured(attempts[i]))
+        print(get_coloured(attempts[i], emoji=False))
 
     if solved:
         print(f'\nCongrats!\nSolved in {len(attempts)}/6 attempts\n')
@@ -134,4 +148,17 @@ while True:
         solved = True
 
 if not solved:
-    print('\nGame Over!\n')
+    print(f'\nGame Over!\nCorrect Word: {Colour.BOLD}{todays_word.upper()}{Colour.RESET}')
+
+# Copy result in Wordle format
+if solved:
+    no_attempts = len(attempts)
+else:
+    no_attempts = 'X'
+
+clip_data = f'Wordle {wordle_no} {no_attempts}/6\n\n'
+for attempt in attempts:
+    clip_data += get_coloured(attempt, emoji=True) + '\n'
+
+clipboard.copy(clip_data)
+print('Copied result to clipboard!')
