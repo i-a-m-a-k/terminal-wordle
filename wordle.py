@@ -4,8 +4,87 @@ import re
 import datetime
 import os
 import sys
+import json
 import clipboard
 import requests
+
+#############################################################
+#                    Coloured Print
+#############################################################
+class Colour:
+    RED = '\033[31m'
+    GREEN = "\033[32m"
+    YELLOW = '\033[33m'
+    BOLD = '\033[1m'
+    RESET = "\033[0;0m"
+    REVERSE = "\033[7m"
+
+def cprint(text, col):
+    # print coloured output to terminal
+    if col.lower() == 'green':
+        modifier = Colour.GREEN
+    elif col.lower() == 'yellow':
+        modifier = Colour.YELLOW
+    elif col.lower() == 'red':
+        modifier = Colour.RED
+    else:
+        print('Error printing colours, exitting.')
+        sys.exit(-1)
+
+    print(modifier + text + Colour.RESET)
+
+#############################################################
+#               Functions to check history
+#############################################################
+HISTORY_DIR = os.path.expanduser('~/.cache') + '/terminal-wordle/'
+HISTORY_FILE = HISTORY_DIR + 'history'
+
+def show_stats(hist_arr, end=False):
+    # Show stats in aa bar graph
+    # end=True means close script
+    solves = [0,0,0,0,0,0]
+    for i in hist_arr:
+        solves[int(i['attempt'])] += 1
+
+    total_solved = sum(solves)
+    for i in range(len(solves)):
+        if not isinstance(i, int):
+            continue
+        print(f'{i}: ', end='')
+        for j in range(int(solves[i] *15/total_solved)):
+            print(Colour.GREEN + Colour.REVERSE + ' ' + Colour.RESET, end='')
+
+        print('')
+
+    if end:
+        sys.exit(0)
+
+#############################################################
+#                   Check if solved today
+#############################################################
+history = ''
+file_exists = True
+if not os.path.exists(HISTORY_FILE):
+    os.system(f'mkdir -p {HISTORY_DIR}')
+    os.system(f'touch {HISTORY_FILE}')
+    file_exists = False
+
+if file_exists:
+    with open(HISTORY_FILE, 'r') as f:
+        history = f.read()
+        if history != '':
+            try:
+                hist_arr = json.loads(history)
+                if isinstance(hist_arr, dict):
+                    #convert to array
+                    hist_arr = [hist_arr]
+                for i in hist_arr:
+                    if i['date'] == str(datetime.date.today()):
+                        print(f'It seems you already played it today. Solved in {i["attempt"]} attempt(s).')
+                        show_stats(hist_arr, end=True)
+            except json.JSONDecodeError:
+                #corrupted data, clear it
+                history = ''
 
 #############################################################
 #                    Getting Wordle Word
@@ -48,31 +127,6 @@ dateobj = datetime.date(2021, 6, 19) #first wordle
 delta = datetime.date.today()-dateobj
 wordle_no = delta.days
 todays_word = words[wordle_no]
-
-#############################################################
-#                    Coloured Print
-#############################################################
-class Colour:
-    RED = '\033[31m'
-    GREEN = "\033[32m"
-    YELLOW = '\033[33m'
-    BOLD = '\033[1m'
-    RESET = "\033[0;0m"
-    REVERSE = "\033[7m"
-
-def cprint(text, col):
-    # print coloured output to terminal
-    if col.lower() == 'green':
-        modifier = Colour.GREEN
-    elif col.lower() == 'yellow':
-        modifier = Colour.YELLOW
-    elif col.lower() == 'red':
-        modifier = Colour.RED
-    else:
-        print('Error printing colours, exitting.')
-        sys.exit(-1)
-
-    print(modifier + text + Colour.RESET)
 
 ##############################################################
 #                 Wordle
@@ -133,7 +187,7 @@ while True:
 
     for i in range(6 - len(attempts) ):
         print(Colour.BOLD + '  _ _ _ _ _\n' + Colour.RESET)
-    
+
     inp_word = input('> ').lower()
     if len(inp_word) != 5:
         wrong_len = True
@@ -162,3 +216,20 @@ for attempt in attempts:
 
 clipboard.copy(clip_data)
 print('Copied result to clipboard!')
+
+#############################################################
+#                   Saving data
+#############################################################
+
+current = dict()
+current['date'] = str(datetime.date.today())
+current['attempt'] = no_attempts
+
+history += json.dumps(current)
+with open(HISTORY_FILE, 'w') as f:
+    f.write(history)
+
+hist_arr = json.loads(history)
+if isinstance(hist_arr, dict):
+    hist_arr = [hist_arr]
+show_stats(hist_arr, end=True)
