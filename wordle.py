@@ -44,13 +44,17 @@ def show_stats(hist_arr, end=False):
     # end=True means close script
     solves = [0,0,0,0,0,0]
     for i in hist_arr:
-        solves[int(i['attempt'])] += 1
+        if isinstance(i['attempt'], int):
+            solves[int(i['attempt'])] += 1
 
+    print('\nResult:')
     total_solved = sum(solves)
+    if total_solved == 0:
+        total_solved = 1
     for i in range(len(solves)):
         if not isinstance(i, int):
             continue
-        print(f'{i}: ', end='')
+        print(Colour.BOLD + f'{i+1}:  ' + Colour.RESET, end='')
         for j in range(int(solves[i] *15/total_solved)):
             print(Colour.GREEN + Colour.REVERSE + ' ' + Colour.RESET, end='')
 
