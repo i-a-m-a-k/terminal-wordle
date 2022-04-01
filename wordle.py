@@ -45,7 +45,7 @@ def show_stats(hist_arr, end=False):
     solves = [0,0,0,0,0,0]
     for i in hist_arr:
         if isinstance(i['attempt'], int):
-            solves[int(i['attempt'])] += 1
+            solves[int(i['attempt']) -1] += 1
 
     print('\nResult:')
     total_solved = sum(solves)
