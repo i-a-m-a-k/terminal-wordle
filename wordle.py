@@ -230,6 +230,7 @@ current['date'] = str(datetime.date.today())
 current['attempt'] = no_attempts
 
 # format JSON properly
+history = history.strip()
 if history == '':
     history = '['
 elif history[-1] == ']':
