@@ -229,7 +229,20 @@ current = dict()
 current['date'] = str(datetime.date.today())
 current['attempt'] = no_attempts
 
+# format JSON properly
+if history == '':
+    history = '['
+elif history[-1] == ']':
+    history = history[:-1]
+
+if history[0] != '[':
+    history = '[' + history
+
+if history[-1] == '}':
+    history += ','
 history += json.dumps(current)
+history += ']'
+
 with open(HISTORY_FILE, 'w') as f:
     f.write(history)
 
